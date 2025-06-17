@@ -1,7 +1,7 @@
 import {View, StyleSheet} from 'react-native';
 import LoginForm from '@/components/forms/LoginForm';
 import {useNavigation, NavigationProp} from '@react-navigation/native';
-import {RootStackParamList} from '@/navigation/AppNavigator';
+import {RootStackParamList} from '@/types/RootStackParamList';
 import {FC} from "react";
 
 const LoginScreen: FC = () => {
