@@ -1,39 +1,20 @@
-import React, {useState} from 'react';
-import {View, Text, TextInput, Button, StyleSheet} from 'react-native';
-import {signIn} from '@/services/authService';
+import {View, TextInput, Button, StyleSheet} from 'react-native';
 
-const LoginForm = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+// Define the type of props expected by the LoginForm component
+interface LoginFormProps {
+    onLoginSuccess: () => void; // Callback to indicate successful login
+}
 
+const LoginForm = ({onLoginSuccess}: LoginFormProps) => {
     const handleLogin = async () => {
-        try {
-            await signIn(email, password);
-            console.log('Usuario autenticado correctamente');
-        } catch (err) {
-            setError('Error al iniciar sesión: ' + (err instanceof Error ? err.message : String(err)));
-        }
+        // Simulate a successful login
+        onLoginSuccess();
     };
 
     return (
         <View style = {styles.container}>
-            <Text style = {styles.title}>Iniciar Sesión</Text>
-            {error ? <Text style = {styles.error}>{error}</Text> : null}
-            <TextInput
-                style = {styles.input}
-                placeholder = 'Correo electrónico'
-                value = {email}
-                onChangeText = {setEmail}
-                keyboardType = 'email-address'
-            />
-            <TextInput
-                style = {styles.input}
-                placeholder = 'Contraseña'
-                value = {password}
-                onChangeText = {setPassword}
-                secureTextEntry
-            />
+            <TextInput style = {styles.input} placeholder = 'Correo electrónico' keyboardType = 'email-address'/>
+            <TextInput style = {styles.input} placeholder = 'Contraseña' secureTextEntry/>
             <Button title = 'Entrar' onPress = {handleLogin}/>
         </View>
     );
@@ -46,11 +27,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: '#f9f9f9',
     },
-    title: {
-        fontSize: 24,
-        marginBottom: 20,
-        textAlign: 'center',
-    },
     input: {
         borderWidth: 1,
         borderColor: '#ccc',
@@ -58,11 +34,6 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: 10,
         backgroundColor: '#fff',
-    },
-    error: {
-        color: 'red',
-        marginBottom: 10,
-        textAlign: 'center',
     },
 });
 
