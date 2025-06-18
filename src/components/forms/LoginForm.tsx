@@ -1,8 +1,9 @@
-import { View, TextInput, Button } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, Image } from "react-native";
+import theme from "@/constants/theme";
 
 // Define the type of props expected by the LoginForm component
 interface LoginFormProps {
-  onLoginSuccess: () => void; // Callback to indicate successful login
+  onLoginSuccess: () => void;
 }
 
 const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
@@ -11,25 +12,38 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   };
 
   return (
-    <View className="flex-1 justify-center bg-gray-100 p-5">
+    <View className="flex-1 justify-center bg-primary p-5">
+      {/* Logo */}
+      <View className="items-center mb-6">
+        <Image
+          source={require("../../assets/images/logo.png")}
+          style={{ width: 300, height: 300 }}
+        />
+      </View>
+
       {/* Email Input */}
       <TextInput
-        className="border border-gray-300 rounded px-4 py-3 mb-4 bg-white"
+        className="border border-secondary rounded px-4 py-3 mb-4 bg-secondary text-primary"
         placeholder="Correo electrónico"
         keyboardType="email-address"
-        placeholderTextColor="#888"
+        placeholderTextColor={theme.colors.primary}
       />
 
       {/* Password Input */}
       <TextInput
-        className="border border-gray-300 rounded px-4 py-3 mb-4 bg-white"
+        className="border border-secondary rounded px-4 py-3 mb-4 bg-secondary text-primary"
         placeholder="Contraseña"
         secureTextEntry
-        placeholderTextColor="#888"
+        placeholderTextColor={theme.colors.primary}
       />
 
       {/* Login Button */}
-      <Button title="Entrar" onPress={handleLogin} />
+      <TouchableOpacity
+        className="bg-accent rounded py-3 mt-4"
+        onPress={handleLogin}
+      >
+        <Text className="text-white text-center font-bold">Entrar</Text>
+      </TouchableOpacity>
     </View>
   );
 };

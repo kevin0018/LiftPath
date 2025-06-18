@@ -1,10 +1,13 @@
-import { Stack } from 'expo-router';
-import '@/styles/global.css'; // Importa los estilos globales
+import { Stack } from "expo-router";
+import "@/styles/global.css";
 
 export default function RootLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="index" />
+    <Stack initialRouteName="login">
+      <Stack.Screen
+        name="login"
+        options={{ headerShown: false }}
+      />
     </Stack>
   );
 }
