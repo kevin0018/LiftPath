@@ -6,7 +6,7 @@ export default {
     slug: "LiftPath",
     version: "1.0.0",
     orientation: "portrait",
-    icon: "./assets/images/icon.png",
+    icon: "./src/assets/images/icon.png",
     scheme: "liftpath",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
@@ -21,7 +21,7 @@ export default {
     android: {
       package: "com.kevin.liftpath",
       adaptiveIcon: {
-        foregroundImage: "./assets/images/adaptive-icon.png",
+        foregroundImage: "./src/assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff",
       },
       edgeToEdgeEnabled: true,
@@ -29,13 +29,14 @@ export default {
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./assets/images/favicon.png",
+      favicon: "./src/assets/images/favicon.png",
       appConfig: {
         initialRouteName: "login",
       },
     },
     plugins: [
       "expo-router",
+      "expo-web-browser",
     ],
     experiments: {
       typedRoutes: true,

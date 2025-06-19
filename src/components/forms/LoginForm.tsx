@@ -1,32 +1,41 @@
-import { View, TextInput, Text, TouchableOpacity, Image } from "react-native";
+import { useState } from "react";
+import { View, TextInput, Text, TouchableOpacity, Alert } from "react-native";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/services/firebaseConfig";
 import theme from "@/constants/theme";
 
-// Define the type of props expected by the LoginForm component
 interface LoginFormProps {
   onLoginSuccess: () => void;
 }
 
 const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const handleLogin = async () => {
-    onLoginSuccess();
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      onLoginSuccess();
+    } catch (error: any) {
+      Alert.alert(
+        "Error de inicio de sesión",
+        error.message.includes("user-not-found")
+          ? "Usuario no encontrado. Por favor verifica tu correo."
+          : "Credenciales incorrectas o problemas de red."
+      );
+    }
   };
 
   return (
     <View className="flex-1 justify-center bg-primary p-5">
-      {/* Logo */}
-      <View className="items-center mb-6">
-        <Image
-          source={require("../../assets/images/logo.png")}
-          style={{ width: 300, height: 300 }}
-        />
-      </View>
-
       {/* Email Input */}
       <TextInput
         className="border border-secondary rounded px-4 py-3 mb-4 bg-secondary text-primary"
         placeholder="Correo electrónico"
         keyboardType="email-address"
         placeholderTextColor={theme.colors.primary}
+        value={email}
+        onChangeText={(text) => setEmail(text)}
       />
 
       {/* Password Input */}
@@ -35,6 +44,8 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
         placeholder="Contraseña"
         secureTextEntry
         placeholderTextColor={theme.colors.primary}
+        value={password}
+        onChangeText={(text) => setPassword(text)}
       />
 
       {/* Login Button */}
