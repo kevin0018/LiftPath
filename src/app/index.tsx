@@ -1,21 +1,8 @@
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { Redirect } from "expo-router";
 
 const Index = () => {
-  const router = useRouter();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      router.replace("/login");
-    }
-  }, [isMounted, router]);
-
-  return null;
+  // Directly redirect to the login page
+  return <Redirect href="/login" />;
 };
 
 export default Index;

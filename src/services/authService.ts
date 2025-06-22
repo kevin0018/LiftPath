@@ -1,7 +1,5 @@
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
-import { firebaseApp } from "./firebaseConfig";
-
-const auth = getAuth(firebaseApp);
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
+import { auth } from "./firebaseConfig";
 
 /**
  * Sign in a user with email and password

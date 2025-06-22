@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { initializeAuth, browserLocalPersistence } from 'firebase/auth';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getAuth } from 'firebase/auth';
 import Constants from 'expo-constants';
+import { setupAuthStatePersistence } from '@/utils/asyncStoragePersistence';
 
 // Ensure Expo configuration exists
 if (!Constants.expoConfig || !Constants.expoConfig.extra) {
@@ -22,8 +22,9 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 
 // Initialize Firebase Auth
-const auth = initializeAuth(firebaseApp, {
-  persistence: browserLocalPersistence,
-});
+const auth = getAuth(firebaseApp);
+
+// Set up AsyncStorage persistence for auth state
+setupAuthStatePersistence(auth);
 
 export { firebaseApp, auth };

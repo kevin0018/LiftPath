@@ -42,6 +42,7 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
         <Image 
           source={require("@/assets/images/logo.png")} 
           style={{ width: 300, height: 300 }}
+          resizeMode="contain"
         />
       </View>
 

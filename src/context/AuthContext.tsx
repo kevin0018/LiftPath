@@ -1,9 +1,11 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { getStoredUser } from "@/utils/asyncStoragePersistence";
 
 interface AuthContextType {
   isAuthenticated: boolean;
   login: () => void;
   logout: () => void;
+  loading: boolean;
 }
 
 // Create the AuthContext
@@ -21,12 +23,24 @@ export const useAuth = () => {
 // AuthProvider component
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Check for stored user on initialization
+  useEffect(() => {
+    const checkStoredUser = async () => {
+      const user = await getStoredUser();
+      setIsAuthenticated(!!user);
+      setLoading(false);
+    };
+
+    checkStoredUser();
+  }, []);
 
   const login = () => setIsAuthenticated(true);
   const logout = () => setIsAuthenticated(false);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

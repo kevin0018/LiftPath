@@ -11,7 +11,7 @@ export default {
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     splash: {
-      image: "./assets/images/splash-icon.png",
+      image: "./src/assets/images/splash-icon.png",
       resizeMode: "contain",
       backgroundColor: "#ffffff",
     },
@@ -30,9 +30,6 @@ export default {
       bundler: "metro",
       output: "static",
       favicon: "./src/assets/images/favicon.png",
-      appConfig: {
-        initialRouteName: "login",
-      },
     },
     plugins: [
       "expo-router",
