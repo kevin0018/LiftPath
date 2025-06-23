@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { View, TextInput, Text, TouchableOpacity, Image } from "react-native";
+import { View, TextInput, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import { signIn, signInWithGoogle } from "../../services/authService";
+import theme from "../../constants/theme";
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -9,31 +12,85 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const handleEmailLogin = async () => {
+    if (isLoading) return;
+    
     setErrorMessage(null);
+    setIsLoading(true);
+    
     try {
       if (!email || !password) {
         setErrorMessage("Por favor ingresa email y contraseña");
+        setIsLoading(false);
         return;
       }
 
-      console.log("Login attempt:", email);
-      
-      // Simulación mejorada con validaciones más realistas
-      if (email.includes("@") && email.includes(".") && password.length >= 6) {
-        console.log("✅ Login exitoso");
-        onLoginSuccess();
-      } else if (!email.includes("@")) {
+      if (!email.includes("@") || !email.includes(".")) {
         setErrorMessage("Por favor ingresa un email válido");
-      } else if (password.length < 6) {
-        setErrorMessage("La contraseña debe tener al menos 6 caracteres");
-      } else {
-        setErrorMessage("Credenciales inválidas");
+        setIsLoading(false);
+        return;
       }
+
+      if (password.length < 6) {
+        setErrorMessage("La contraseña debe tener al menos 6 caracteres");
+        setIsLoading(false);
+        return;
+      }
+
+      console.log("Intentando login con email:", email);
+      const result = await signIn(email, password);
+      console.log("✅ Login exitoso:", result.user.email);
+      onLoginSuccess();
+      
     } catch (error: any) {
-      console.log("Error:", error);
-      setErrorMessage("Ha ocurrido un error inesperado.");
+      console.error("Error en login:", error);
+      
+      // Manejo de errores específicos de Firebase
+      if (error.code === 'auth/user-not-found') {
+        setErrorMessage("No existe una cuenta con este email");
+      } else if (error.code === 'auth/wrong-password') {
+        setErrorMessage("Contraseña incorrecta");
+      } else if (error.code === 'auth/invalid-email') {
+        setErrorMessage("Email inválido");
+      } else if (error.code === 'auth/too-many-requests') {
+        setErrorMessage("Demasiados intentos fallidos. Intenta más tarde");
+      } else {
+        setErrorMessage("Error de autenticación. Verifica tus credenciales");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    if (isGoogleLoading) return;
+    
+    setErrorMessage(null);
+    setIsGoogleLoading(true);
+    
+    try {
+      console.log("Intentando login con Google...");
+      const result = await signInWithGoogle();
+      console.log("✅ Google login exitoso:", result.user.email);
+      onLoginSuccess();
+      
+    } catch (error: any) {
+      console.error("Error en Google login:", error);
+      
+      if (error.code === 'auth/account-exists-with-different-credential') {
+        setErrorMessage("Ya existe una cuenta con este email usando otro método");
+      } else if (error.code === 'auth/credential-already-in-use') {
+        setErrorMessage("Esta cuenta de Google ya está en uso");
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        setErrorMessage("Login cancelado por el usuario");
+      } else {
+        setErrorMessage("Error al iniciar sesión con Google");
+      }
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -52,41 +109,128 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
       {/* Form */}
       <View className="w-full space-y-4">
         {/* Email Input */}
-        <TextInput
-          className="bg-white rounded-lg px-4 py-4 text-base text-black"
-          placeholder="Correo electrónico"
-          placeholderTextColor="#666"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
+        <View className="relative">
+          <TextInput
+            className="bg-white rounded-lg px-4 py-4 text-base text-black pr-12"
+            placeholder="Correo electrónico"
+            placeholderTextColor="#666"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={email}
+            onChangeText={setEmail}
+            editable={!isLoading && !isGoogleLoading}
+          />
+          <Ionicons 
+            name="mail-outline" 
+            size={20} 
+            color="#666" 
+            style={{
+              position: 'absolute',
+              right: 12,
+              top: 16
+            }}
+          />
+        </View>
 
         {/* Password Input */}
-        <TextInput
-          className="bg-secondary rounded-lg px-4 py-4 text-base text-black mt-4"
-          placeholder="Contraseña"
-          placeholderTextColor="#666"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View className="relative mt-4">
+          <TextInput
+            className="bg-white rounded-lg px-4 py-4 text-base text-black pr-12"
+            placeholder="Contraseña"
+            placeholderTextColor="#666"
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={password}
+            onChangeText={setPassword}
+            editable={!isLoading && !isGoogleLoading}
+          />
+          <Ionicons 
+            name="lock-closed-outline" 
+            size={20} 
+            color="#666" 
+            style={{
+              position: 'absolute',
+              right: 12,
+              top: 16
+            }}
+          />
+        </View>
 
         {/* Error Message */}
         {errorMessage && (
-          <Text className="text-red-500 text-center mb-4">
-            {errorMessage}
-          </Text>
+          <View className="bg-red-100 border border-red-400 rounded-lg p-3 mt-4">
+            <Text className="text-red-700 text-center text-sm">
+              {errorMessage}
+            </Text>
+          </View>
         )}
 
-        {/* Login Button */}
+        {/* Email Login Button */}
         <TouchableOpacity
-          className="bg-accent rounded-lg py-4 mt-6"
-          onPress={handleLogin}
+          className={`rounded-lg py-4 mt-6 ${isLoading || isGoogleLoading ? 'bg-gray-400' : 'bg-accent'}`}
+          onPress={handleEmailLogin}
+          disabled={isLoading || isGoogleLoading}
         >
-          <Text className="text-white text-center font-bold text-base">
-            Entrar
-          </Text>
+          <View className="flex-row items-center justify-center">
+            {isLoading && (
+              <ActivityIndicator 
+                size="small" 
+                color="white" 
+                style={{ marginRight: 8 }} 
+              />
+            )}
+            <Text className="text-white text-center font-bold text-base">
+              {isLoading ? 'Iniciando sesión...' : 'Entrar con Email'}
+            </Text>
+          </View>
         </TouchableOpacity>
+
+        {/* Divider */}
+        <View className="flex-row items-center mt-6 mb-4">
+          <View className="flex-1 h-px bg-secondary" />
+          <Text className="mx-4 text-secondary text-sm">O</Text>
+          <View className="flex-1 h-px bg-secondary" />
+        </View>
+
+        {/* Google Login Button */}
+        <TouchableOpacity
+          className={`border-2 border-white rounded-lg py-4 ${isLoading || isGoogleLoading ? 'opacity-50' : ''}`}
+          onPress={handleGoogleLogin}
+          disabled={isLoading || isGoogleLoading}
+        >
+          <View className="flex-row items-center justify-center">
+            {isGoogleLoading && (
+              <ActivityIndicator 
+                size="small" 
+                color="white" 
+                style={{ marginRight: 8 }} 
+              />
+            )}
+            {!isGoogleLoading && (
+              <Ionicons 
+                name="logo-google" 
+                size={20} 
+                color="white" 
+                style={{ marginRight: 8 }}
+              />
+            )}
+            <Text className="text-white text-center font-bold text-base">
+              {isGoogleLoading ? 'Conectando...' : 'Continuar con Google'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Register Link */}
+        <View className="mt-8">
+          <Text className="text-secondary text-center">
+            ¿No tienes cuenta?{' '}
+            <Text className="text-accent font-bold">
+              Regístrate aquí
+            </Text>
+          </Text>
+        </View>
       </View>
     </View>
   );

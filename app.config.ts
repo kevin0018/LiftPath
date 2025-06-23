@@ -34,6 +34,7 @@ export default {
     plugins: [
       "expo-router",
       "expo-web-browser",
+      "@react-native-google-signin/google-signin",
     ],
     experiments: {
       typedRoutes: true,
@@ -45,6 +46,7 @@ export default {
       STORAGE_BUCKET: process.env.STORAGE_BUCKET,
       MESSAGING_SENDER_ID: process.env.MESSAGING_SENDER_ID,
       APP_ID: process.env.APP_ID,
+      GOOGLE_WEB_CLIENT_ID: process.env.GOOGLE_WEB_CLIENT_ID,
     },
   },
 };

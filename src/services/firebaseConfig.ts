@@ -1,13 +1,14 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeAuth, getAuth, type Auth } from 'firebase/auth';
+import { setupAuthStatePersistence } from '../utils/asyncStoragePersistence';
 import Constants from 'expo-constants';
 
-// Verificar configuración de Expo
+// Check if the environment variables are available
 if (!Constants.expoConfig?.extra) {
   throw new Error("Variables de entorno no encontradas en Constants.expoConfig.extra");
 }
 
-// Firebase configuration - SOLO desde variables de entorno
+// Firebase configuration
 const firebaseConfig = {
   apiKey: Constants.expoConfig.extra.API_KEY,
   authDomain: Constants.expoConfig.extra.AUTH_DOMAIN,
@@ -17,7 +18,7 @@ const firebaseConfig = {
   appId: Constants.expoConfig.extra.APP_ID,
 };
 
-// Verificar que todas las variables estén presentes
+// Verify that all required environment variables are present
 const requiredVars = ['API_KEY', 'AUTH_DOMAIN', 'PROJECT_ID', 'STORAGE_BUCKET', 'MESSAGING_SENDER_ID', 'APP_ID'];
 for (const varName of requiredVars) {
   if (!Constants.expoConfig.extra[varName]) {
@@ -30,7 +31,7 @@ console.log("Configurando Firebase...", {
   hasApiKey: !!firebaseConfig.apiKey
 });
 
-// Initialize Firebase App (evitar reinicialización)
+// Initialize Firebase App
 let firebaseApp;
 if (getApps().length === 0) {
   firebaseApp = initializeApp(firebaseConfig);
@@ -40,8 +41,23 @@ if (getApps().length === 0) {
   console.log("Firebase app ya existía");
 }
 
-// Initialize Auth - SIMPLE approach debido a problemas con initializeAuth
-const auth = getAuth(firebaseApp);
-console.log("Firebase Auth inicializado (simple)");
+// Initialize Auth
+let auth: Auth;
+try {
+  auth = getAuth(firebaseApp);
+  console.log("Firebase Auth obtenido de instancia existente");
+} catch (error) {
+  try {
+    auth = initializeAuth(firebaseApp);
+    console.log("Firebase Auth inicializado nuevo");
+  } catch (initError) {
+    auth = getAuth(firebaseApp);
+    console.log("Firebase Auth fallback a getAuth");
+  }
+}
+
+// Configure persistence with AsyncStorage
+setupAuthStatePersistence(auth);
+console.log("Persistencia de Auth configurada con AsyncStorage");
 
 export { firebaseApp, auth };
