@@ -1,14 +1,13 @@
 import { View } from 'react-native';
 import LoginForm from '@/components/forms/LoginForm';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '@/types/RootStackParamList';
+import { useRouter } from 'expo-router';
 import { FC } from "react";
 
 const LoginScreen: FC = () => {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const router = useRouter();
 
   const handleLoginSuccess = () => {
-    navigation.navigate('home');
+    router.push('/home');
   };
 
   return (

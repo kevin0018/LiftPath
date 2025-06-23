@@ -1,14 +1,13 @@
 import { View, Text, Button } from 'react-native';
 import 'nativewind';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
-import { RootStackParamList } from '@/types/RootStackParamList';
+import { useRouter } from 'expo-router';
 import { FC } from 'react';
 
 const HomeScreen: FC = () => {
-  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
+  const router = useRouter();
 
   const handleLogout = () => {
-    navigation.navigate('login');
+    router.push('/login');
   };
 
   return (
