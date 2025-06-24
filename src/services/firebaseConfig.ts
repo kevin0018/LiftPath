@@ -1,14 +1,30 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { initializeAuth, getAuth, type Auth } from 'firebase/auth';
-import { setupAuthStatePersistence } from '../utils/asyncStoragePersistence';
+import { initializeAuth, getReactNativePersistence, type Auth, getAuth } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
-// Check if the environment variables are available
+// Validate that all required environment variables are present in expoConfig.extra
+const requiredVars = [
+  'API_KEY',
+  'AUTH_DOMAIN',
+  'PROJECT_ID',
+  'STORAGE_BUCKET',
+  'MESSAGING_SENDER_ID',
+  'APP_ID',
+  'GOOGLE_WEB_CLIENT_ID',
+];
+
 if (!Constants.expoConfig?.extra) {
-  throw new Error("Variables de entorno no encontradas en Constants.expoConfig.extra");
+  throw new Error('Environment variables not found in Constants.expoConfig.extra');
 }
 
-// Firebase configuration
+for (const varName of requiredVars) {
+  if (!Constants.expoConfig.extra[varName]) {
+    throw new Error(`Missing environment variable: ${varName}`);
+  }
+}
+
+// Firebase configuration object
 const firebaseConfig = {
   apiKey: Constants.expoConfig.extra.API_KEY,
   authDomain: Constants.expoConfig.extra.AUTH_DOMAIN,
@@ -18,46 +34,18 @@ const firebaseConfig = {
   appId: Constants.expoConfig.extra.APP_ID,
 };
 
-// Verify that all required environment variables are present
-const requiredVars = ['API_KEY', 'AUTH_DOMAIN', 'PROJECT_ID', 'STORAGE_BUCKET', 'MESSAGING_SENDER_ID', 'APP_ID'];
-for (const varName of requiredVars) {
-  if (!Constants.expoConfig.extra[varName]) {
-    throw new Error(`Variable de entorno faltante: ${varName}`);
-  }
-}
+// Initialize Firebase App (singleton)
+const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
-console.log("Configurando Firebase...", {
-  projectId: firebaseConfig.projectId,
-  hasApiKey: !!firebaseConfig.apiKey
-});
-
-// Initialize Firebase App
-let firebaseApp;
-if (getApps().length === 0) {
-  firebaseApp = initializeApp(firebaseConfig);
-  console.log("Firebase app inicializada");
-} else {
-  firebaseApp = getApps()[0];
-  console.log("Firebase app ya existía");
-}
-
-// Initialize Auth
+// Initialize Auth with AsyncStorage persistence (singleton, safe pattern)
 let auth: Auth;
 try {
+  auth = initializeAuth(firebaseApp, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+} catch (e: any) {
+  // If already initialized, fallback to getAuth
   auth = getAuth(firebaseApp);
-  console.log("Firebase Auth obtenido de instancia existente");
-} catch (error) {
-  try {
-    auth = initializeAuth(firebaseApp);
-    console.log("Firebase Auth inicializado nuevo");
-  } catch (initError) {
-    auth = getAuth(firebaseApp);
-    console.log("Firebase Auth fallback a getAuth");
-  }
 }
-
-// Configure persistence with AsyncStorage
-setupAuthStatePersistence(auth);
-console.log("Persistencia de Auth configurada con AsyncStorage");
 
 export { firebaseApp, auth };
