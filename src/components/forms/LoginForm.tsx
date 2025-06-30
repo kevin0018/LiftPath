@@ -3,6 +3,7 @@ import { View, TextInput, Text, TouchableOpacity, Image, Alert, ActivityIndicato
 import { Ionicons } from '@expo/vector-icons';
 import { signIn, signInWithGoogle } from "../../services/authService";
 import theme from "../../constants/theme";
+import Constants from 'expo-constants';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -14,6 +15,9 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Check if running in Expo Go
+  const isExpoGo = Constants.appOwnership === 'expo';
 
   const handleEmailLogin = async () => {
     if (isLoading) return;
@@ -86,6 +90,8 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
         setErrorMessage("Esta cuenta de Google ya está en uso");
       } else if (error.code === 'auth/popup-closed-by-user') {
         setErrorMessage("Login cancelado por el usuario");
+      } else if (error.message?.includes('Expo Go')) {
+        setErrorMessage("Google Sign-In requiere un custom development build");
       } else {
         setErrorMessage("Error al iniciar sesión con Google");
       }
@@ -189,40 +195,61 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
             </View>
           </TouchableOpacity>
 
-          {/* Divider */}
-          <View className="flex-row items-center mt-6 mb-4">
-            <View className="flex-1 h-px bg-secondary" />
-            <Text className="mx-4 text-secondary text-sm">O</Text>
-            <View className="flex-1 h-px bg-secondary" />
-          </View>
+          {/* Divider - Only show if Google Sign-In is available */}
+          {!isExpoGo && (
+            <View className="flex-row items-center mt-6 mb-4">
+              <View className="flex-1 h-px bg-secondary" />
+              <Text className="mx-4 text-secondary text-sm">O</Text>
+              <View className="flex-1 h-px bg-secondary" />
+            </View>
+          )}
 
-          {/* Google Login Button */}
-          <TouchableOpacity
-            className={`border-2 border-white rounded-lg py-4 ${isLoading || isGoogleLoading ? 'opacity-50' : ''}`}
-            onPress={handleGoogleLogin}
-            disabled={isLoading || isGoogleLoading}
-          >
-            <View className="flex-row items-center justify-center">
-              {isGoogleLoading && (
-                <ActivityIndicator 
-                  size="small" 
-                  color="white" 
-                  style={{ marginRight: 8 }} 
-                />
-              )}
-              {!isGoogleLoading && (
+          {/* Google Login Button - Only show if not in Expo Go */}
+          {!isExpoGo && (
+            <TouchableOpacity
+              className={`border-2 border-white rounded-lg py-4 ${isLoading || isGoogleLoading ? 'opacity-50' : ''}`}
+              onPress={handleGoogleLogin}
+              disabled={isLoading || isGoogleLoading}
+            >
+              <View className="flex-row items-center justify-center">
+                {isGoogleLoading && (
+                  <ActivityIndicator 
+                    size="small" 
+                    color="white" 
+                    style={{ marginRight: 8 }} 
+                  />
+                )}
+                {!isGoogleLoading && (
+                  <Ionicons 
+                    name="logo-google" 
+                    size={20} 
+                    color="white" 
+                    style={{ marginRight: 8 }}
+                  />
+                )}
+                <Text className="text-white text-center font-bold text-base">
+                  {isGoogleLoading ? 'Conectando...' : 'Continuar con Google'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {/* Expo Go Notice */}
+          {isExpoGo && (
+            <View className="border-2 border-gray-500 rounded-lg py-4 opacity-50">
+              <View className="flex-row items-center justify-center">
                 <Ionicons 
-                  name="logo-google" 
+                  name="information-circle-outline" 
                   size={20} 
-                  color="white" 
+                  color="#a4a5ad" 
                   style={{ marginRight: 8 }}
                 />
-              )}
-              <Text className="text-white text-center font-bold text-base">
-                {isGoogleLoading ? 'Conectando...' : 'Continuar con Google'}
-              </Text>
+                <Text className="text-secondary text-center text-sm">
+                  Google Sign-In no disponible en Expo Go
+                </Text>
+              </View>
             </View>
-          </TouchableOpacity>
+          )}
 
           {/* Register Link */}
           <View className="mt-8">
