@@ -47,6 +47,9 @@ export default {
       MESSAGING_SENDER_ID: process.env.MESSAGING_SENDER_ID,
       APP_ID: process.env.APP_ID,
       GOOGLE_WEB_CLIENT_ID: process.env.GOOGLE_WEB_CLIENT_ID,
+      eas: {
+        projectId: "5cab1b45-bb43-4628-90c5-5e70fe5813b5"
+      }
     },
   },
 };
