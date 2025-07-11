@@ -13,7 +13,7 @@ export default {
     splash: {
       image: "./src/assets/images/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#ffffff",
+      backgroundColor: "#2a2a2a",
     },
     ios: {
       supportsTablet: true,
@@ -22,7 +22,7 @@ export default {
       package: "com.kevin.liftpath",
       adaptiveIcon: {
         foregroundImage: "./src/assets/images/adaptive-icon.png",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#2a2a2a",
       },
       edgeToEdgeEnabled: true,
     },

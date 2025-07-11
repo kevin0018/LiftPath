@@ -6,13 +6,23 @@ import {
   signInWithCredential
 } from "firebase/auth";
 import { auth } from "./firebaseConfig";
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 
-// Configurar Google Sign-In
-GoogleSignin.configure({
-  webClientId: Constants.expoConfig?.extra?.GOOGLE_WEB_CLIENT_ID || '', // Del proyecto Firebase
-});
+// Check if running in Expo Go environment
+const isExpoGo = Constants.appOwnership === 'expo';
+
+// Configure Google Sign-In only if not in Expo Go
+let GoogleSignin: any = null;
+if (!isExpoGo) {
+  try {
+    GoogleSignin = require('@react-native-google-signin/google-signin').GoogleSignin;
+    GoogleSignin.configure({
+      webClientId: Constants.expoConfig?.extra?.GOOGLE_WEB_CLIENT_ID || '',
+    });
+  } catch (error) {
+    console.warn('Google Sign-In not available in Expo Go environment');
+  }
+}
 
 /**
  * Sign in a user with email and password
@@ -50,23 +60,31 @@ export const logout = async () => {
 /**
  * Sign in with Google
  */
+/**
+ * Sign in with Google - Only works in custom development builds, not Expo Go
+ */
 export const signInWithGoogle = async () => {
+  // Check if running in Expo Go
+  if (isExpoGo || !GoogleSignin) {
+    throw new Error('Google Sign-In no está disponible en Expo Go. Usa un custom development build.');
+  }
+
   try {
-    // Verificar si Google Play Services está disponible
+    // Verify Google Play Services availability
     await GoogleSignin.hasPlayServices();
     
-    // Obtener información del usuario de Google
+    // Get user info from Google
     const userInfo = await GoogleSignin.signIn();
     
-    // Crear credencial de Firebase con el token de Google
+    // Create Firebase credential with Google token
     const googleCredential = GoogleAuthProvider.credential(
       userInfo.data?.idToken
     );
     
-    // Autenticar con Firebase usando la credencial de Google
+    // Authenticate with Firebase using Google credential
     return await signInWithCredential(auth, googleCredential);
   } catch (error: any) {
-    console.error('Error en Google Sign-In:', error);
+    console.error('Error in Google Sign-In:', error);
     throw error;
   }
 };

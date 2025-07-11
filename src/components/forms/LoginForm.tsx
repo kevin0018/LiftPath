@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { View, TextInput, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from "react-native";
+import { View, TextInput, Text, TouchableOpacity, Image, Alert, ActivityIndicator, SafeAreaView } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { signIn, signInWithGoogle } from "../../services/authService";
 import theme from "../../constants/theme";
+import Constants from 'expo-constants';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
@@ -14,6 +15,9 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Check if running in Expo Go
+  const isExpoGo = Constants.appOwnership === 'expo';
 
   const handleEmailLogin = async () => {
     if (isLoading) return;
@@ -86,6 +90,8 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
         setErrorMessage("Esta cuenta de Google ya está en uso");
       } else if (error.code === 'auth/popup-closed-by-user') {
         setErrorMessage("Login cancelado por el usuario");
+      } else if (error.message?.includes('Expo Go')) {
+        setErrorMessage("Google Sign-In requiere un custom development build");
       } else {
         setErrorMessage("Error al iniciar sesión con Google");
       }
@@ -95,143 +101,168 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   };
 
   return (
-    <View className="flex-1 justify-center bg-primary p-8">
-      {/* Logo */}
-      <View className="items-center mb-12">
-        <Image 
-          source={require('../../assets/images/logo.png')} 
-          className="w-72 h-72"
-          style={{ tintColor: 'white' }}
-          resizeMode="contain"
-        />
+    <View className="flex-1 bg-primary w-full h-full">
+      <SafeAreaView className="flex-1 bg-primary">
+        <View className="flex-1 justify-center px-6">
+          {/* Logo */}
+          <View className="items-center mb-12">
+            <Image 
+              source={require('../../assets/images/logo.png')} 
+              className="w-72 h-72"
+              style={{ tintColor: 'white' }}
+              resizeMode="contain"
+            />
+          </View>
+
+        {/* Form */}
+        <View className="w-full space-y-4">
+          {/* Email Input */}
+          <View className="relative">
+            <TextInput
+              className="bg-white rounded-lg px-4 py-4 text-base text-black pr-12"
+              placeholder="Correo electrónico"
+              placeholderTextColor="#666"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={email}
+              onChangeText={setEmail}
+              editable={!isLoading && !isGoogleLoading}
+            />
+            <Ionicons 
+              name="mail-outline" 
+              size={20} 
+              color="#666" 
+              style={{
+                position: 'absolute',
+                right: 12,
+                top: 16
+              }}
+            />
+          </View>
+
+          {/* Password Input */}
+          <View className="relative mt-4">
+            <TextInput
+              className="bg-white rounded-lg px-4 py-4 text-base text-black pr-12"
+              placeholder="Contraseña"
+              placeholderTextColor="#666"
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={password}
+              onChangeText={setPassword}
+              editable={!isLoading && !isGoogleLoading}
+            />
+            <Ionicons 
+              name="lock-closed-outline" 
+              size={20} 
+              color="#666" 
+              style={{
+                position: 'absolute',
+                right: 12,
+                top: 16
+              }}
+            />
+          </View>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <View className="bg-red-100 border border-red-400 rounded-lg p-3 mt-4">
+              <Text className="text-red-700 text-center text-sm">
+                {errorMessage}
+              </Text>
+            </View>
+          )}
+
+          {/* Email Login Button */}
+          <TouchableOpacity
+            className={`rounded-lg py-4 mt-6 ${isLoading || isGoogleLoading ? 'bg-gray-400' : 'bg-accent'}`}
+            onPress={handleEmailLogin}
+            disabled={isLoading || isGoogleLoading}
+          >
+            <View className="flex-row items-center justify-center">
+              {isLoading && (
+                <ActivityIndicator 
+                  size="small" 
+                  color="white" 
+                  style={{ marginRight: 8 }} 
+                />
+              )}
+              <Text className="text-white text-center font-bold text-base">
+                {isLoading ? 'Iniciando sesión...' : 'Entrar con Email'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* Divider - Only show if Google Sign-In is available */}
+          {!isExpoGo && (
+            <View className="flex-row items-center mt-6 mb-4">
+              <View className="flex-1 h-px bg-secondary" />
+              <Text className="mx-4 text-secondary text-sm">O</Text>
+              <View className="flex-1 h-px bg-secondary" />
+            </View>
+          )}
+
+          {/* Google Login Button - Only show if not in Expo Go */}
+          {!isExpoGo && (
+            <TouchableOpacity
+              className={`border-2 border-white rounded-lg py-4 ${isLoading || isGoogleLoading ? 'opacity-50' : ''}`}
+              onPress={handleGoogleLogin}
+              disabled={isLoading || isGoogleLoading}
+            >
+              <View className="flex-row items-center justify-center">
+                {isGoogleLoading && (
+                  <ActivityIndicator 
+                    size="small" 
+                    color="white" 
+                    style={{ marginRight: 8 }} 
+                  />
+                )}
+                {!isGoogleLoading && (
+                  <Ionicons 
+                    name="logo-google" 
+                    size={20} 
+                    color="white" 
+                    style={{ marginRight: 8 }}
+                  />
+                )}
+                <Text className="text-white text-center font-bold text-base">
+                  {isGoogleLoading ? 'Conectando...' : 'Continuar con Google'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {/* Expo Go Notice */}
+          {isExpoGo && (
+            <View className="border-2 border-gray-500 rounded-lg py-4 opacity-50">
+              <View className="flex-row items-center justify-center">
+                <Ionicons 
+                  name="information-circle-outline" 
+                  size={20} 
+                  color="#a4a5ad" 
+                  style={{ marginRight: 8 }}
+                />
+                <Text className="text-secondary text-center text-sm">
+                  Google Sign-In no disponible en Expo Go
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Register Link */}
+          <View className="mt-8">
+            <Text className="text-secondary text-center">
+              ¿No tienes cuenta?{' '}
+              <Text className="text-accent font-bold">
+                Regístrate aquí
+              </Text>
+            </Text>
+          </View>
+        </View>
       </View>
-
-      {/* Form */}
-      <View className="w-full space-y-4">
-        {/* Email Input */}
-        <View className="relative">
-          <TextInput
-            className="bg-white rounded-lg px-4 py-4 text-base text-black pr-12"
-            placeholder="Correo electrónico"
-            placeholderTextColor="#666"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={email}
-            onChangeText={setEmail}
-            editable={!isLoading && !isGoogleLoading}
-          />
-          <Ionicons 
-            name="mail-outline" 
-            size={20} 
-            color="#666" 
-            style={{
-              position: 'absolute',
-              right: 12,
-              top: 16
-            }}
-          />
-        </View>
-
-        {/* Password Input */}
-        <View className="relative mt-4">
-          <TextInput
-            className="bg-white rounded-lg px-4 py-4 text-base text-black pr-12"
-            placeholder="Contraseña"
-            placeholderTextColor="#666"
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={password}
-            onChangeText={setPassword}
-            editable={!isLoading && !isGoogleLoading}
-          />
-          <Ionicons 
-            name="lock-closed-outline" 
-            size={20} 
-            color="#666" 
-            style={{
-              position: 'absolute',
-              right: 12,
-              top: 16
-            }}
-          />
-        </View>
-
-        {/* Error Message */}
-        {errorMessage && (
-          <View className="bg-red-100 border border-red-400 rounded-lg p-3 mt-4">
-            <Text className="text-red-700 text-center text-sm">
-              {errorMessage}
-            </Text>
-          </View>
-        )}
-
-        {/* Email Login Button */}
-        <TouchableOpacity
-          className={`rounded-lg py-4 mt-6 ${isLoading || isGoogleLoading ? 'bg-gray-400' : 'bg-accent'}`}
-          onPress={handleEmailLogin}
-          disabled={isLoading || isGoogleLoading}
-        >
-          <View className="flex-row items-center justify-center">
-            {isLoading && (
-              <ActivityIndicator 
-                size="small" 
-                color="white" 
-                style={{ marginRight: 8 }} 
-              />
-            )}
-            <Text className="text-white text-center font-bold text-base">
-              {isLoading ? 'Iniciando sesión...' : 'Entrar con Email'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Divider */}
-        <View className="flex-row items-center mt-6 mb-4">
-          <View className="flex-1 h-px bg-secondary" />
-          <Text className="mx-4 text-secondary text-sm">O</Text>
-          <View className="flex-1 h-px bg-secondary" />
-        </View>
-
-        {/* Google Login Button */}
-        <TouchableOpacity
-          className={`border-2 border-white rounded-lg py-4 ${isLoading || isGoogleLoading ? 'opacity-50' : ''}`}
-          onPress={handleGoogleLogin}
-          disabled={isLoading || isGoogleLoading}
-        >
-          <View className="flex-row items-center justify-center">
-            {isGoogleLoading && (
-              <ActivityIndicator 
-                size="small" 
-                color="white" 
-                style={{ marginRight: 8 }} 
-              />
-            )}
-            {!isGoogleLoading && (
-              <Ionicons 
-                name="logo-google" 
-                size={20} 
-                color="white" 
-                style={{ marginRight: 8 }}
-              />
-            )}
-            <Text className="text-white text-center font-bold text-base">
-              {isGoogleLoading ? 'Conectando...' : 'Continuar con Google'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Register Link */}
-        <View className="mt-8">
-          <Text className="text-secondary text-center">
-            ¿No tienes cuenta?{' '}
-            <Text className="text-accent font-bold">
-              Regístrate aquí
-            </Text>
-          </Text>
-        </View>
-      </View>
+      </SafeAreaView>
     </View>
   );
 };
