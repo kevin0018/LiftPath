@@ -364,7 +364,7 @@ export const initializeDefaultRoutines = async (): Promise<WorkoutRoutine[]> => 
       return [];
     }
     
-    // Revisar si el usuario ya tiene rutinas (sin usar getUserRoutines para evitar bucle)
+    // Revisar si el usuario ya tiene rutinas
     const userId = auth.currentUser.uid;
     const routinesRef = collection(db, 'routines');
     const q = query(routinesRef, where('userId', '==', userId));
@@ -385,7 +385,6 @@ export const initializeDefaultRoutines = async (): Promise<WorkoutRoutine[]> => 
       return existingRoutines;
     }
 
-    // Ya tenemos userId declarado arriba, así que solo declaramos timestamp
     const timestamp = Date.now();
     const defaultRoutines: Array<Omit<WorkoutRoutine, 'id'>> = [
       // Push Day Routine
