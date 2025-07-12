@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, SafeAreaView, FlatList, Image } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
 import theme from "../constants/theme";
 import { WorkoutRoutine as FirebaseRoutine } from "../services/routineService";
 
@@ -41,7 +42,17 @@ const WorkoutRoutinesScreen = ({ routines, onRoutineSelect }: WorkoutRoutinesScr
                 onPress={() => item.id && onRoutineSelect(item.id)}
               >
                 <Text className="text-black font-bold text-lg mb-1">{item.name}</Text>
-                <Text className="text-gray-600 text-sm">{item.description}</Text>
+                <Text className="text-gray-600 text-sm mb-2">{item.description}</Text>
+                
+                {/* Exercise Count Badge */}
+                {item.exercises && item.exercises.length > 0 && (
+                  <View className="flex-row items-center">
+                    <Ionicons name="barbell-outline" size={16} color={theme.colors.accent} />
+                    <Text className="text-accent ml-1 font-semibold">
+                      {item.exercises.length} {item.exercises.length === 1 ? 'ejercicio' : 'ejercicios'}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             )}
             ListEmptyComponent={

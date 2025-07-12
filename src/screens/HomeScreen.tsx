@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import WorkoutRoutinesScreen from "./WorkoutRoutinesScreen";
 import ProfileScreen from "./ProfileScreen";
+import RoutineDetailScreen from "./RoutineDetailScreen";
 import { getUserRoutines, type WorkoutRoutine } from "../services/routineService";
 
 const HomeScreen = () => {
@@ -13,6 +14,8 @@ const HomeScreen = () => {
   const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
+  const [routineDetailVisible, setRoutineDetailVisible] = useState(false);
   
   useEffect(() => {
     loadRoutines();
@@ -34,7 +37,8 @@ const HomeScreen = () => {
 
   const handleRoutineSelect = (id: string) => {
     if (id) {
-      alert(`Rutina seleccionada: ${id}`);
+      setSelectedRoutineId(id);
+      setRoutineDetailVisible(true);
     }
   };
 
@@ -110,9 +114,36 @@ const HomeScreen = () => {
             <Text className="text-white">Reintentar</Text>
           </TouchableOpacity>
         </View>
+      ) : routines.length === 0 ? (
+        <View className="flex-1 justify-center items-center px-6">
+          <Ionicons name="barbell-outline" size={64} color="#FFFFFF80" />
+          <Text className="text-white text-center text-xl font-bold mt-4 mb-2">No tienes rutinas todavía</Text>
+          <Text className="text-gray-300 text-center mb-6">Puedes crear tu primera rutina desde la sección de perfil</Text>
+          <TouchableOpacity 
+            className="bg-accent px-6 py-3 rounded-xl"
+            onPress={() => setProfileModalVisible(true)}
+          >
+            <Text className="text-white font-bold">Crear rutina</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <WorkoutRoutinesScreen routines={routines} onRoutineSelect={handleRoutineSelect} />
       )}
+
+      {/* Routine Detail Modal */}
+      <Modal
+        visible={routineDetailVisible}
+        animationType="slide"
+        onRequestClose={() => setRoutineDetailVisible(false)}
+      >
+        {selectedRoutineId && (
+          <RoutineDetailScreen
+            routineId={selectedRoutineId}
+            onClose={() => setRoutineDetailVisible(false)}
+            onRoutineUpdated={loadRoutines}
+          />
+        )}
+      </Modal>
     </View>
   );
 };
