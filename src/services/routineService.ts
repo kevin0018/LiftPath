@@ -385,7 +385,7 @@ export const initializeDefaultRoutines = async (): Promise<WorkoutRoutine[]> => 
       return existingRoutines;
     }
 
-    const userId = auth.currentUser.uid;
+    // Ya tenemos userId declarado arriba, así que solo declaramos timestamp
     const timestamp = Date.now();
     const defaultRoutines: Array<Omit<WorkoutRoutine, 'id'>> = [
       // Push Day Routine
