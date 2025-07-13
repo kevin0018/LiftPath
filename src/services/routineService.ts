@@ -8,6 +8,14 @@ const db = getFirestore(firebaseApp);
 // Flag to track if default routines have been initialized
 let defaultRoutinesInitialized = false;
 
+// Define ProgressEntry type for exercise tracking
+export interface ProgressEntry {
+  date: number;
+  reps: string;
+  weight: string;
+  notes?: string;
+}
+
 // Define Exercise type
 export interface Exercise {
   id?: string;
@@ -16,6 +24,10 @@ export interface Exercise {
   reps?: string;
   weight?: string;
   notes?: string;
+  currentReps?: string;
+  currentWeight?: string;
+  lastPerformed?: number;
+  progress?: ProgressEntry[];
 }
 
 // Define Workout Routine type
@@ -235,10 +247,15 @@ export const addExerciseToRoutine = async (routineId: string, exercise: Omit<Exe
       throw new Error('Not authorized to update this routine');
     }
     
-    // Create the new exercise with ID
+    // Create the new exercise with ID and tracking fields
     const newExercise: Exercise = {
       ...exercise,
-      id: Date.now().toString() // Simple ID generation
+      id: Date.now().toString(), // Simple ID generation
+      // Inicializar campos de seguimiento
+      currentReps: exercise.reps || "",
+      currentWeight: exercise.weight || "",
+      lastPerformed: 0, // No se ha realizado aún
+      progress: [] // Historial vacío inicialmente
     };
     
     // Add the exercise to the routine
@@ -347,6 +364,118 @@ export const deleteExerciseFromRoutine = async (routineId: string, exerciseId: s
 };
 
 /**
+ * Register the progress of an exercise in a routine
+ */
+export const recordExerciseProgress = async (
+  routineId: string,
+  exerciseId: string, 
+  progressData: { reps: string; weight: string; notes?: string }
+): Promise<Exercise> => {
+  try {
+    if (!auth.currentUser) {
+      throw new Error('User not authenticated');
+    }
+
+    // Verify that the routine exists and belongs to the current user
+    const routineRef = doc(db, 'routines', routineId);
+    const routineSnap = await getDoc(routineRef);
+    
+    if (!routineSnap.exists()) {
+      throw new Error('Routine not found');
+    }
+    
+    const routineData = routineSnap.data();
+    if (routineData.userId !== auth.currentUser.uid) {
+      throw new Error('Not authorized to update this routine');
+    }
+    
+    // Find the exercise
+    const exercises = routineData.exercises || [];
+    const exerciseIndex = exercises.findIndex((ex: Exercise) => ex.id === exerciseId);
+    
+    if (exerciseIndex === -1) {
+      throw new Error('Exercise not found in the routine');
+    }
+    
+    const currentExercise = exercises[exerciseIndex];
+    const now = Date.now();
+    
+    // Create a new progress entry
+    const newProgressEntry: ProgressEntry = {
+      date: now,
+      reps: progressData.reps,
+      weight: progressData.weight,
+      notes: progressData.notes
+    };
+    
+    // Update the exercise with the new progress data
+    const updatedExercise: Exercise = {
+      ...currentExercise,
+      currentReps: progressData.reps,
+      currentWeight: progressData.weight,
+      lastPerformed: now,
+      progress: [...(currentExercise.progress || []), newProgressEntry]
+    };
+    
+    // Update the exercise in the routine
+    const updatedExercises = [...exercises];
+    updatedExercises[exerciseIndex] = updatedExercise;
+    
+    // Update the routine document
+    await updateDoc(routineRef, {
+      exercises: updatedExercises,
+      updatedAt: now
+    });
+    
+    return updatedExercise;
+  } catch (error) {
+    console.error('Error registering exercise progress:', error);
+    return handleFirebaseError(error);
+  }
+};
+
+/**
+ * Get the progress history for a specific exercise in a routine
+ */
+export const getExerciseProgressHistory = async (
+  routineId: string,
+  exerciseId: string
+): Promise<ProgressEntry[]> => {
+  try {
+    if (!auth.currentUser) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get the routine and verify ownership
+    const routineRef = doc(db, 'routines', routineId);
+    const routineSnap = await getDoc(routineRef);
+    
+    if (!routineSnap.exists()) {
+      throw new Error('Routine not found');
+    }
+    
+    const routineData = routineSnap.data();
+    if (routineData.userId !== auth.currentUser.uid) {
+      throw new Error('Not authorized to view this routine');
+    }
+    
+    // Find the exercise
+    const exercises = routineData.exercises || [];
+    const exercise = exercises.find((ex: Exercise) => ex.id === exerciseId);
+    
+    if (!exercise) {
+      throw new Error('Exercise not found in the routine');
+    }
+    
+    // Return the progress history sorted by date descending
+    return (exercise.progress || []).sort((a: ProgressEntry, b: ProgressEntry) => b.date - a.date);
+  } catch (error) {
+    console.error('Error getting exercise progress history:', error);
+    throw error;
+  }
+};
+
+/**
  * Initialize default workout routines for a user
  * This should be called when a user first logs in or when they have no routines
  */
@@ -358,13 +487,13 @@ export const initializeDefaultRoutines = async (): Promise<WorkoutRoutine[]> => 
       return [];
     }
     
-    // Si ya inicializamos antes, no lo hacemos de nuevo
+    // if already initialized, skip
     if (defaultRoutinesInitialized) {
       console.log("Las rutinas predeterminadas ya fueron inicializadas anteriormente");
       return [];
     }
     
-    // Revisar si el usuario ya tiene rutinas
+    // Check if the user already has routines
     const userId = auth.currentUser.uid;
     const routinesRef = collection(db, 'routines');
     const q = query(routinesRef, where('userId', '==', userId));
@@ -561,14 +690,14 @@ export const initializeDefaultRoutines = async (): Promise<WorkoutRoutine[]> => 
         errorCount++;
         console.error(`Error al añadir rutina predeterminada "${routine.name}":`, e?.message || e);
         
-        // Si es un error de permisos, mostramos un mensaje más detallado
+        // if it's a permission error, log a specific message
         if (e?.code === 'permission-denied' || (e?.message && e.message.includes('insufficient permissions'))) {
           console.error(`⚠️ Error de permisos al crear rutina "${routine.name}". Verifica las reglas de Firebase.`);
         }
       }
     }
 
-    // Establecemos la bandera incluso si hubo errores para evitar intentos repetidos
+    // Set the flag to avoid repeated initialization attempts
     defaultRoutinesInitialized = true;
     
     if (createdRoutines.length > 0) {
@@ -583,7 +712,7 @@ export const initializeDefaultRoutines = async (): Promise<WorkoutRoutine[]> => 
     }
   } catch (error: any) {
     console.error('Error al inicializar rutinas predeterminadas:', error?.message || error);
-    defaultRoutinesInitialized = true; // Evitar intentos repetidos
-    return []; // Devolver array vacío en lugar de lanzar error para evitar romper la UI
+    defaultRoutinesInitialized = true;
+    return [];
   }
 };
