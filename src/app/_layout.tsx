@@ -14,19 +14,23 @@ function AuthProtection({ children }: { children: React.ReactNode }) {
     // Skip protection if we're still loading the auth state
     if (loading) return;
 
-    const isOnAuthScreen = segments[0] === "login" || segments[0] === "index";
+    // Get current path
+    const currentPath = segments.join('/');
+    console.log("Auth protection - isAuthenticated:", isAuthenticated, "path:", currentPath);
     
-    console.log("Auth protection - isAuthenticated:", isAuthenticated, "isOnAuthScreen:", isOnAuthScreen);
+    // check if the current path is login or root
+    const isLoginPath = currentPath === "login" || currentPath === "";
     
-    // If not authenticated and not on an auth screen, redirect to login
-    if (!isAuthenticated && !isOnAuthScreen) {
-      console.log("Redirecting to login...");
+    // Route protection
+    if (!isAuthenticated && !isLoginPath) {
+      console.log("Usuario no autenticado, redirigiendo a login...");
       router.replace("/login");
+      return;
     }
     
-    // If authenticated and on an auth screen, redirect to home
-    if (isAuthenticated && isOnAuthScreen && segments[0] !== "index") {
-      console.log("Redirecting to home...");
+    // Redirect if already authenticated 
+    if (isAuthenticated && currentPath === "login") {
+      console.log("Usuario ya autenticado, redirigiendo a home...");
       router.replace("/home");
     }
   }, [isAuthenticated, loading, segments]);
@@ -47,10 +51,11 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AuthProtection>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="home" options={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="home" />
+          <Stack.Screen name="profile" />
         </Stack>
       </AuthProtection>
     </AuthProvider>
