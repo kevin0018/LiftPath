@@ -19,10 +19,10 @@ const WorkoutRoutinesScreen = ({ routines, onRoutineSelect }: WorkoutRoutinesScr
         <View className="w-full max-w-sm flex-1 justify-center bg-primary rounded-2xl shadow-lg p-6">
           {/* Logo */}
           <View className="items-center mb-10 mt-2">
-            <View style={{ width: 80, height: 80, backgroundColor: theme.colors.primary, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <View style={{ width: 200, height: 200, backgroundColor: theme.colors.primary, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               <Image 
                 source={require('../assets/images/logo.png')} 
-                style={{ width: 72, height: 72, tintColor: 'white', backgroundColor: theme.colors.primary }}
+                style={{ width: 180, height: 180, tintColor: 'white', backgroundColor: theme.colors.primary }}
                 resizeMode="contain"
               />
             </View>

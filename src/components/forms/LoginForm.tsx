@@ -4,10 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { signIn, signInWithGoogle } from "../../services/authService";
 import theme from "../../constants/theme";
 import Constants from 'expo-constants';
+import { Link } from 'expo-router';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
   onRegisterRedirect?: () => void;
+  navigateRegister?: boolean; // Nueva prop para indicar si debemos navegar a registro
 }
 
 const LoginForm = ({ onLoginSuccess, onRegisterRedirect }: LoginFormProps) => {
@@ -247,15 +249,19 @@ const LoginForm = ({ onLoginSuccess, onRegisterRedirect }: LoginFormProps) => {
 
             {/* Register Link */}
             <View className="mt-8">
-              <Text className="text-secondary text-center">
-                ¿No tienes cuenta?{' '}
-                <Text 
-                  className="text-accent font-bold"
-                  onPress={onRegisterRedirect}
-                >
-                  Regístrate aquí
-                </Text>
-              </Text>
+              <View className="flex-row justify-center">
+                <Text className="text-secondary">¿No tienes cuenta? </Text>
+                <Link href="/register" asChild>
+                  <TouchableOpacity activeOpacity={0.7}>
+                    <Text 
+                      className="text-accent font-bold"
+                      style={{ textDecorationLine: 'underline' }}
+                    >
+                      Regístrate aquí
+                    </Text>
+                  </TouchableOpacity>
+                </Link>
+              </View>
             </View>
           </View>
         </View>

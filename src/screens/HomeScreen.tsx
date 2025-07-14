@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { View, TouchableOpacity, Text, Modal, Pressable, ActivityIndicator } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from "../context/AuthContext";
+import * as Linking from 'expo-linking';
 import WorkoutRoutinesScreen from "./WorkoutRoutinesScreen";
 import ProfileScreen from "./ProfileScreen";
 import RoutineDetailScreen from "./RoutineDetailScreen";
@@ -42,14 +44,24 @@ const HomeScreen = () => {
     }
   };
 
+  const { logout } = useAuth();
+  
   const handleProfile = () => {
     setDropdownVisible(false);
     setProfileModalVisible(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setDropdownVisible(false);
-    router.push('/login');
+    try {
+      await logout();
+      // La redirección a login debería ocurrir automáticamente debido a AuthProtection en _layout.tsx
+      // Pero por si acaso, redirigimos manualmente
+      const loginUrl = Linking.createURL('/login');
+      Linking.openURL(loginUrl);
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+    }
   };
 
   return (

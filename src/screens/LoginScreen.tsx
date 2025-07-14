@@ -12,10 +12,7 @@ const LoginScreen: FC = () => {
     Linking.openURL(homeUrl);
   };
 
-  const handleRegisterRedirect = () => {
-    const registerUrl = Linking.createURL('/register');
-    Linking.openURL(registerUrl);
-  };
+  const handleRegisterRedirect = () => {};
 
   return (
     <>
