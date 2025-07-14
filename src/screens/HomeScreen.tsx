@@ -110,6 +110,25 @@ const HomeScreen = () => {
         </View>
       </Modal>
 
+      {/* Quick Actions */}
+      <View className="flex-row justify-center my-4 px-4">
+        <TouchableOpacity 
+          className="flex-1 bg-accent rounded-xl py-4 px-2 mr-2 items-center"
+          onPress={() => router.push({pathname: 'daily-progress'} as any)}
+        >
+          <Ionicons name="checkbox" size={28} color="white" />
+          <Text className="text-white font-bold mt-2">Progreso Diario</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          className="flex-1 bg-accent rounded-xl py-4 px-2 ml-2 items-center"
+          onPress={() => router.push({pathname: 'weekly-plan'} as any)}
+        >
+          <Ionicons name="calendar" size={28} color="white" />
+          <Text className="text-white font-bold mt-2">Plan Semanal</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Main Content */}
       {loading ? (
         <View className="flex-1 justify-center items-center">
@@ -139,7 +158,13 @@ const HomeScreen = () => {
           </TouchableOpacity>
         </View>
       ) : (
-        <WorkoutRoutinesScreen routines={routines} onRoutineSelect={handleRoutineSelect} />
+        <View className="flex-1">
+          <View className="px-4 mb-4">
+            <Text className="text-white text-xl font-bold mb-2">Tus Rutinas</Text>
+            <Text className="text-gray-300">Selecciona una rutina para ver detalles</Text>
+          </View>
+          <WorkoutRoutinesScreen routines={routines} onRoutineSelect={handleRoutineSelect} />
+        </View>
       )}
 
       {/* Routine Detail Modal */}
