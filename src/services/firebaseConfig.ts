@@ -3,6 +3,7 @@ import { initializeAuth, type Auth, getAuth } from 'firebase/auth';
 // @ts-ignore
 import { getReactNativePersistence } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getFirestore } from 'firebase/firestore';
 import { setupAuthStatePersistence } from '../utils/asyncStoragePersistence';
 import Constants from 'expo-constants';
 
@@ -53,4 +54,7 @@ try {
 // Setup custom AsyncStorage persistence
 setupAuthStatePersistence(auth);
 
-export { firebaseApp, auth };
+// Initialize Firestore
+const db = getFirestore(firebaseApp);
+
+export { firebaseApp, auth, db };
