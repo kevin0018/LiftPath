@@ -18,18 +18,18 @@ function AuthProtection({ children }: { children: React.ReactNode }) {
     const currentPath = segments.join('/');
     console.log("Auth protection - isAuthenticated:", isAuthenticated, "path:", currentPath);
     
-    // check if the current path is login or root
-    const isLoginPath = currentPath === "login" || currentPath === "";
+    // check if the current path is login, register or root
+    const isPublicPath = currentPath === "login" || currentPath === "register" || currentPath === "";
     
     // Route protection
-    if (!isAuthenticated && !isLoginPath) {
+    if (!isAuthenticated && !isPublicPath) {
       console.log("Usuario no autenticado, redirigiendo a login...");
       router.replace("/login");
       return;
     }
     
     // Redirect if already authenticated 
-    if (isAuthenticated && currentPath === "login") {
+    if (isAuthenticated && (currentPath === "login" || currentPath === "register")) {
       console.log("Usuario ya autenticado, redirigiendo a home...");
       router.replace("/home");
     }
@@ -54,6 +54,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
           <Stack.Screen name="home" />
           <Stack.Screen name="profile" />
         </Stack>

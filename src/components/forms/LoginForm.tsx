@@ -7,9 +7,10 @@ import Constants from 'expo-constants';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;
+  onRegisterRedirect?: () => void;
 }
 
-const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
+const LoginForm = ({ onLoginSuccess, onRegisterRedirect }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -248,7 +249,10 @@ const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
             <View className="mt-8">
               <Text className="text-secondary text-center">
                 ¿No tienes cuenta?{' '}
-                <Text className="text-accent font-bold">
+                <Text 
+                  className="text-accent font-bold"
+                  onPress={onRegisterRedirect}
+                >
                   Regístrate aquí
                 </Text>
               </Text>
