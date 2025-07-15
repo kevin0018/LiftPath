@@ -9,6 +9,7 @@ import ProfileScreen from "./ProfileScreen";
 import RoutineDetailScreen from "./RoutineDetailScreen";
 import { getUserRoutines, type WorkoutRoutine } from "../services/routineService";
 import theme from "../constants/theme";
+import { debugRoutines, debugWeeklyPlan } from "../utils/debugUtils";
 
 const HomeScreen = () => {
   const router = useRouter();
@@ -28,13 +29,27 @@ const HomeScreen = () => {
     try {
       setLoading(true);
       setError(null);
+      console.log('🔍 Loading routines...');
       const userRoutines = await getUserRoutines();
+      console.log('📋 Loaded routines:', userRoutines);
       setRoutines(userRoutines);
     } catch (err) {
-      console.error('Error loading routines:', err);
+      console.error('❌ Error loading routines:', err);
       setError('No se pudieron cargar las rutinas');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDebugRoutines = async () => {
+    try {
+      console.log('🔧 Debug: Starting routine debug...');
+      await debugRoutines();
+      await debugWeeklyPlan();
+      // Reload routines after debug
+      await loadRoutines();
+    } catch (error) {
+      console.error('❌ Debug error:', error);
     }
   };
 
@@ -144,6 +159,17 @@ const HomeScreen = () => {
                 <View className="flex-row items-center justify-center">
                   <Ionicons name="calendar" size={24} color="white" style={{ marginRight: 8 }} />
                   <Text className="text-white font-bold text-base">Plan Semanal</Text>
+                </View>
+              </TouchableOpacity>
+              
+              {/* Debug Button - Remove after testing */}
+              <TouchableOpacity 
+                className="bg-secondary rounded-xl py-4 px-4 shadow-md"
+                onPress={handleDebugRoutines}
+              >
+                <View className="flex-row items-center justify-center">
+                  <Ionicons name="bug" size={24} color="white" style={{ marginRight: 8 }} />
+                  <Text className="text-white font-bold text-base">Debug Rutinas</Text>
                 </View>
               </TouchableOpacity>
             </View>

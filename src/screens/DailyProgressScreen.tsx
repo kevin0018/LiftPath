@@ -70,25 +70,33 @@ const DailyProgressScreen = ({ date: initialDate, onClose }: DailyProgressScreen
       setLoading(true);
       setError(null);
       
+      console.log('🔍 Loading workout for date:', date);
+      
       // Try to get the workout for the date
       let dailyWorkout = await getDailyWorkout(date);
+      console.log('📅 Found existing workout:', dailyWorkout);
       
       // If it doesn't exist and it's today, try to generate it
       if (!dailyWorkout && date === new Date().toISOString().split('T')[0]) {
+        console.log('🔄 No workout found for today, generating...');
+        
         // Check if weekly plan configuration exists
         const weeklyPlan = await getWeeklyPlanConfig();
+        console.log('📋 Weekly plan:', weeklyPlan);
         
         if (!weeklyPlan) {
+          console.log('⚙️ No weekly plan found, initializing PPL...');
           // Initialize weekly plan with PPL
           await initializeWeeklyPlanWithPPL();
         }
         
         dailyWorkout = await generateTodaysWorkout();
+        console.log('✅ Generated workout:', dailyWorkout);
       }
       
       setWorkout(dailyWorkout);
     } catch (err) {
-      console.error('Error loading workout:', err);
+      console.error('❌ Error loading workout:', err);
       setError('No se pudo cargar el entrenamiento del día');
     } finally {
       setLoading(false);

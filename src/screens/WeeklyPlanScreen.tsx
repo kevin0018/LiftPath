@@ -11,6 +11,7 @@ import {
   StyleSheet
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import theme from "../constants/theme";
 import { 
   WeeklyPlanConfig, 
@@ -39,6 +40,7 @@ interface WeeklyPlanScreenProps {
 }
 
 const WeeklyPlanScreen = ({ onClose, onPlanUpdated }: WeeklyPlanScreenProps) => {
+  const router = useRouter();
   const [plan, setPlan] = useState<WeeklyPlanConfig | null>(null);
   const [routines, setRoutines] = useState<WorkoutRoutine[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,6 +48,14 @@ const WeeklyPlanScreen = ({ onClose, onPlanUpdated }: WeeklyPlanScreenProps) => 
   const [submitting, setSubmitting] = useState(false);
   const [selectModalVisible, setSelectModalVisible] = useState(false);
   const [currentDay, setCurrentDay] = useState<string | null>(null);
+
+  const handleGoBack = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      router.back();
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -56,18 +66,24 @@ const WeeklyPlanScreen = ({ onClose, onPlanUpdated }: WeeklyPlanScreenProps) => 
       setLoading(true);
       setError(null);
       
+      console.log('🔍 Loading weekly plan data...');
+      
       const userRoutines = await getUserRoutines();
+      console.log('📋 User routines:', userRoutines);
       setRoutines(userRoutines);
       
       let weeklyPlan = await getWeeklyPlanConfig();
+      console.log('📅 Weekly plan:', weeklyPlan);
       
       if (!weeklyPlan) {
+        console.log('⚙️ No weekly plan found, initializing PPL...');
         weeklyPlan = await initializeWeeklyPlanWithPPL();
+        console.log('✅ Initialized weekly plan:', weeklyPlan);
       }
       
       setPlan(weeklyPlan);
     } catch (err) {
-      console.error('Error loading data:', err);
+      console.error('❌ Error loading data:', err);
       setError('No se pudo cargar la información del plan semanal');
     } finally {
       setLoading(false);
@@ -146,7 +162,7 @@ const WeeklyPlanScreen = ({ onClose, onPlanUpdated }: WeeklyPlanScreenProps) => 
         <View className="w-full max-w-sm flex-1 justify-center bg-primary rounded-2xl shadow-lg p-6">
           {/* Header */}
           <View className="flex-row items-center justify-between mb-6">
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={handleGoBack}>
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
             <Text className="text-white text-center font-bold text-2xl">
