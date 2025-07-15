@@ -12,6 +12,7 @@ import {
   StyleSheet
 } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import theme from "../constants/theme";
 import { 
   DailyWorkout, 
@@ -32,6 +33,7 @@ interface DailyProgressScreenProps {
 }
 
 const DailyProgressScreen = ({ date: initialDate, onClose }: DailyProgressScreenProps) => {
+  const router = useRouter();
   const [date, setDate] = useState<string>(initialDate || new Date().toISOString().split('T')[0]);
   const [workout, setWorkout] = useState<DailyWorkout | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +42,15 @@ const DailyProgressScreen = ({ date: initialDate, onClose }: DailyProgressScreen
   const [currentExercise, setCurrentExercise] = useState<DailyExercise | null>(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [infoModalVisible, setInfoModalVisible] = useState(false);
+
+  const handleGoBack = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      router.back();
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const dateObj = new Date(dateString);
@@ -213,13 +224,15 @@ const DailyProgressScreen = ({ date: initialDate, onClose }: DailyProgressScreen
         <View className="w-full max-w-sm flex-1 justify-center bg-primary rounded-2xl shadow-lg p-6">
           {/* Header */}
           <View className="flex-row items-center justify-between mb-6">
-            <TouchableOpacity onPress={onClose}>
+            <TouchableOpacity onPress={handleGoBack}>
               <Ionicons name="arrow-back" size={24} color="white" />
             </TouchableOpacity>
             <Text className="text-white text-center font-bold text-2xl">
               Progreso Diario
             </Text>
-            <View style={{ width: 24 }} />
+            <TouchableOpacity onPress={() => setInfoModalVisible(true)}>
+              <Ionicons name="information-circle-outline" size={24} color="white" />
+            </TouchableOpacity>
           </View>
 
           {/* Date Navigation */}
@@ -278,10 +291,29 @@ const DailyProgressScreen = ({ date: initialDate, onClose }: DailyProgressScreen
           ) : !workout ? (
             <View className="flex-1 items-center justify-center">
               <Ionicons name="fitness" size={48} color={theme.colors.accent} />
-              <Text className="text-white text-center mt-2 mb-4">
-                No hay entrenamiento programado para esta fecha.
+              <Text className="text-white text-center text-lg font-bold mt-4 mb-2">
+                {(() => {
+                  const dayOfWeek = new Date(date).getDay();
+                  const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+                  const routineNames = ["Descanso", "Push", "Pull", "Legs", "Push", "Pull", "Legs"];
+                  
+                  return dayOfWeek === 0 
+                    ? "Día de descanso" 
+                    : `${dayNames[dayOfWeek]} - ${routineNames[dayOfWeek]}`;
+                })()}
               </Text>
-              {date === new Date().toISOString().split('T')[0] && (
+              <Text className="text-gray-300 text-center mb-6 text-sm">
+                {(() => {
+                  const dayOfWeek = new Date(date).getDay();
+                  if (dayOfWeek === 0) {
+                    return "Los domingos son para descansar y recuperarse";
+                  }
+                  return date === new Date().toISOString().split('T')[0] 
+                    ? "No hay entrenamiento programado para hoy. Intenta crear uno." 
+                    : "No hay entrenamiento programado para esta fecha.";
+                })()}
+              </Text>
+              {date === new Date().toISOString().split('T')[0] && new Date().getDay() !== 0 && (
                 <TouchableOpacity
                   className="bg-accent mt-2 py-3 px-6 rounded-xl"
                   onPress={loadWorkout}
@@ -294,14 +326,35 @@ const DailyProgressScreen = ({ date: initialDate, onClose }: DailyProgressScreen
             <>
               {/* Routine Name */}
               <View className="bg-white rounded-xl px-5 py-4 mb-4 shadow-sm">
-                <Text className="text-black font-bold text-lg">{workout.routineName}</Text>
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1">
+                    <Text className="text-black font-bold text-lg">{workout.routineName}</Text>
+                    <Text className="text-gray-600 text-sm mt-1">
+                      {(() => {
+                        const dayOfWeek = new Date(date).getDay();
+                        const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+                        const routineTypes = ["Descanso", "Push Day", "Pull Day", "Leg Day", "Push Day", "Pull Day", "Leg Day"];
+                        
+                        return `${dayNames[dayOfWeek]} • ${routineTypes[dayOfWeek]}`;
+                      })()}
+                    </Text>
+                  </View>
+                  <View className="items-center">
+                    <Ionicons 
+                      name={workout.completed ? "checkmark-circle" : "time"} 
+                      size={24} 
+                      color={workout.completed ? theme.colors.success : theme.colors.accent} 
+                    />
+                  </View>
+                </View>
+                
                 {workout.completed ? (
-                  <View className="flex-row items-center mt-2 bg-green-100 py-2 px-4 rounded-lg">
+                  <View className="flex-row items-center mt-3 bg-green-100 py-2 px-4 rounded-lg">
                     <Ionicons name="checkmark-circle" size={18} color={theme.colors.success} />
                     <Text className="text-success ml-2 font-medium">Completado</Text>
                   </View>
                 ) : (
-                  <View className="flex-row items-center mt-2 bg-blue-100 py-2 px-4 rounded-lg">
+                  <View className="flex-row items-center mt-3 bg-blue-100 py-2 px-4 rounded-lg">
                     <Ionicons name="time" size={18} color={theme.colors.accent} />
                     <Text className="text-accent ml-2 font-medium">En progreso</Text>
                   </View>
@@ -395,6 +448,74 @@ const DailyProgressScreen = ({ date: initialDate, onClose }: DailyProgressScreen
                     )}
                   </TouchableOpacity>
                 </View>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Info Modal */}
+          <Modal
+            visible={infoModalVisible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={() => setInfoModalVisible(false)}
+          >
+            <View className="flex-1 bg-black bg-opacity-50 items-center justify-center p-4">
+              <View className="bg-white w-full max-w-sm p-6 rounded-2xl">
+                <View className="flex-row items-center justify-between mb-4">
+                  <Text className="text-black font-bold text-lg">Plan Push-Pull-Legs</Text>
+                  <TouchableOpacity onPress={() => setInfoModalVisible(false)}>
+                    <Ionicons name="close" size={24} color="#666" />
+                  </TouchableOpacity>
+                </View>
+                
+                <View className="space-y-4">
+                  <View>
+                    <Text className="text-black font-semibold text-base mb-2">Estructura semanal:</Text>
+                    <View className="space-y-2">
+                      <View className="flex-row items-center">
+                        <View className="w-3 h-3 bg-accent rounded-full mr-3" />
+                        <Text className="text-gray-700">Lunes & Jueves: Push Day</Text>
+                      </View>
+                      <View className="flex-row items-center">
+                        <View className="w-3 h-3 bg-blue-500 rounded-full mr-3" />
+                        <Text className="text-gray-700">Martes & Viernes: Pull Day</Text>
+                      </View>
+                      <View className="flex-row items-center">
+                        <View className="w-3 h-3 bg-green-500 rounded-full mr-3" />
+                        <Text className="text-gray-700">Miércoles & Sábado: Leg Day</Text>
+                      </View>
+                      <View className="flex-row items-center">
+                        <View className="w-3 h-3 bg-gray-400 rounded-full mr-3" />
+                        <Text className="text-gray-700">Domingo: Descanso</Text>
+                      </View>
+                    </View>
+                  </View>
+                  
+                  <View>
+                    <Text className="text-black font-semibold text-base mb-2">¿Qué significa cada día?</Text>
+                    <View className="space-y-2">
+                      <View>
+                        <Text className="text-accent font-medium">Push Day:</Text>
+                        <Text className="text-gray-600 text-sm">Pecho, hombros y tríceps</Text>
+                      </View>
+                      <View>
+                        <Text className="text-blue-600 font-medium">Pull Day:</Text>
+                        <Text className="text-gray-600 text-sm">Espalda y bíceps</Text>
+                      </View>
+                      <View>
+                        <Text className="text-green-600 font-medium">Leg Day:</Text>
+                        <Text className="text-gray-600 text-sm">Piernas y glúteos</Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                
+                <TouchableOpacity
+                  className="bg-accent mt-6 py-3 px-6 rounded-xl"
+                  onPress={() => setInfoModalVisible(false)}
+                >
+                  <Text className="text-white font-bold text-center">Entendido</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </Modal>
