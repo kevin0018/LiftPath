@@ -9,7 +9,6 @@ import ProfileScreen from "./ProfileScreen";
 import RoutineDetailScreen from "./RoutineDetailScreen";
 import { getUserRoutines, type WorkoutRoutine } from "../services/routineService";
 import theme from "../constants/theme";
-import { debugRoutines, debugWeeklyPlan } from "../utils/debugUtils";
 
 const HomeScreen = () => {
   const router = useRouter();
@@ -20,36 +19,21 @@ const HomeScreen = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null);
   const [routineDetailVisible, setRoutineDetailVisible] = useState(false);
-  
+
   useEffect(() => {
     loadRoutines();
   }, []);
-  
+
   const loadRoutines = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔍 Loading routines...');
       const userRoutines = await getUserRoutines();
-      console.log('📋 Loaded routines:', userRoutines);
       setRoutines(userRoutines);
     } catch (err) {
-      console.error('❌ Error loading routines:', err);
       setError('No se pudieron cargar las rutinas');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleDebugRoutines = async () => {
-    try {
-      console.log('🔧 Debug: Starting routine debug...');
-      await debugRoutines();
-      await debugWeeklyPlan();
-      // Reload routines after debug
-      await loadRoutines();
-    } catch (error) {
-      console.error('❌ Debug error:', error);
     }
   };
 
@@ -61,7 +45,7 @@ const HomeScreen = () => {
   };
 
   const { logout } = useAuth();
-  
+
   const handleProfile = () => {
     setDropdownVisible(false);
     setProfileModalVisible(true);
@@ -128,12 +112,12 @@ const HomeScreen = () => {
         {/* Centered Content Container */}
         <View className="flex-1 items-center justify-center px-4">
           <View className="w-full max-w-sm">
-            
+
             {/* Logo */}
             <View className="items-center mb-8">
               <View style={{ width: 120, height: 120, backgroundColor: theme.colors.primary, borderRadius: 24, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                <Image 
-                  source={require('../assets/images/logo.png')} 
+                <Image
+                  source={require('../assets/images/logo.png')}
                   style={{ width: 120, height: 120, tintColor: 'white', backgroundColor: theme.colors.primary }}
                   resizeMode="contain"
                 />
@@ -142,34 +126,23 @@ const HomeScreen = () => {
 
             {/* Quick Actions */}
             <View className="w-full space-y-4 mb-8">
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="bg-accent rounded-xl py-4 px-4 shadow-md"
-                onPress={() => router.push({pathname: 'daily-progress'} as any)}
+                onPress={() => router.push({ pathname: 'daily-progress' } as any)}
               >
                 <View className="flex-row items-center justify-center">
                   <Ionicons name="checkbox" size={24} color="white" style={{ marginRight: 8 }} />
                   <Text className="text-white font-bold text-base">Progreso Diario</Text>
                 </View>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 className="bg-accent rounded-xl py-4 px-4 shadow-md"
-                onPress={() => router.push({pathname: 'weekly-plan'} as any)}
+                onPress={() => router.push({ pathname: 'weekly-plan' } as any)}
               >
                 <View className="flex-row items-center justify-center">
                   <Ionicons name="calendar" size={24} color="white" style={{ marginRight: 8 }} />
                   <Text className="text-white font-bold text-base">Plan Semanal</Text>
-                </View>
-              </TouchableOpacity>
-              
-              {/* Debug Button - Remove after testing */}
-              <TouchableOpacity 
-                className="bg-secondary rounded-xl py-4 px-4 shadow-md"
-                onPress={handleDebugRoutines}
-              >
-                <View className="flex-row items-center justify-center">
-                  <Ionicons name="bug" size={24} color="white" style={{ marginRight: 8 }} />
-                  <Text className="text-white font-bold text-base">Debug Rutinas</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -183,8 +156,8 @@ const HomeScreen = () => {
             ) : error ? (
               <View className="items-center py-8">
                 <Text className="text-red-400 text-center mb-4">{error}</Text>
-                <TouchableOpacity 
-                  className="bg-secondary px-4 py-2 rounded-lg" 
+                <TouchableOpacity
+                  className="bg-secondary px-4 py-2 rounded-lg"
                   onPress={loadRoutines}
                 >
                   <Text className="text-white">Reintentar</Text>
@@ -195,7 +168,7 @@ const HomeScreen = () => {
                 <Ionicons name="barbell-outline" size={48} color="#FFFFFF80" />
                 <Text className="text-white text-center text-lg font-bold mt-4 mb-2">No tienes rutinas todavía</Text>
                 <Text className="text-gray-300 text-center mb-6 text-sm">Puedes crear tu primera rutina desde la sección de perfil</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                   className="bg-accent px-6 py-3 rounded-xl"
                   onPress={() => setProfileModalVisible(true)}
                 >

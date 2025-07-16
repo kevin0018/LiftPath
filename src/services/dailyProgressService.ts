@@ -6,14 +6,12 @@ import { WorkoutRoutine, Exercise } from './routineService';
 // Initialize Firestore
 const db = getFirestore(firebaseApp);
 
-// Define un tipo para el estado de cada ejercicio
 export enum ExerciseStatus {
   PENDING = 'pending',
   COMPLETED = 'completed',
   SKIPPED = 'skipped'
 }
 
-// Define un tipo para cada ejercicio en el plan diario
 export interface DailyExercise {
   id: string;
   routineId: string;
@@ -27,12 +25,11 @@ export interface DailyExercise {
   completedAt?: number;
 }
 
-// Define un tipo para el plan diario
 export interface DailyWorkout {
   id?: string;
   userId: string;
-  date: string; // formato YYYY-MM-DD
-  dayOfWeek: number; // 0-6 (0 = domingo, 1 = lunes, etc.)
+  date: string;
+  dayOfWeek: number;
   routineId?: string;
   routineName?: string;
   exercises: DailyExercise[];
@@ -41,11 +38,10 @@ export interface DailyWorkout {
   updatedAt: number;
 }
 
-// Define un tipo para la configuración del plan semanal
 export interface WeeklyPlanConfig {
   id?: string;
   userId: string;
-  monday?: string; // Routine ID
+  monday?: string;
   tuesday?: string;
   wednesday?: string;
   thursday?: string;
@@ -68,14 +64,13 @@ export const getWeeklyPlanConfig = async (): Promise<WeeklyPlanConfig | null> =>
     const userId = auth.currentUser.uid;
     const planConfigRef = collection(db, 'weeklyPlans');
     const q = query(planConfigRef, where('userId', '==', userId));
-    
+
     const querySnapshot = await getDocs(q);
-    
+
     if (querySnapshot.empty) {
       return null;
     }
-    
-    // Debería haber solo un plan semanal por usuario
+
     const planDoc = querySnapshot.docs[0];
     return { id: planDoc.id, ...planDoc.data() } as WeeklyPlanConfig;
   } catch (error) {
@@ -95,37 +90,53 @@ export const saveWeeklyPlanConfig = async (config: Partial<WeeklyPlanConfig>): P
 
     const userId = auth.currentUser.uid;
     const timestamp = Date.now();
-    
-    // Verificar si ya existe un plan semanal
+
     const existingPlan = await getWeeklyPlanConfig();
-    
-    if (existingPlan) {
-      // Actualizar el plan existente
-      const planRef = doc(db, 'weeklyPlans', existingPlan.id!);
-      await updateDoc(planRef, {
-        ...config,
-        updatedAt: timestamp
-      });
-      
-      return { 
-        ...existingPlan, 
-        ...config, 
-        updatedAt: timestamp 
+
+    const cleanConfig = {
+      ...config,
+      monday: config.monday || '',
+      tuesday: config.tuesday || '',
+      wednesday: config.wednesday || '',
+      thursday: config.thursday || '',
+      friday: config.friday || '',
+      saturday: config.saturday || '',
+      sunday: config.sunday || '',
+      updatedAt: timestamp
+    };
+
+    if (existingPlan && existingPlan.id) {
+      const planRef = doc(db, 'weeklyPlans', existingPlan.id);
+      await updateDoc(planRef, cleanConfig);
+
+      const updatedPlan = {
+        ...existingPlan,
+        ...cleanConfig
       };
+
+      return updatedPlan;
     } else {
-      // Crear un nuevo plan
       const newPlan: WeeklyPlanConfig = {
         userId,
-        ...config,
+        monday: cleanConfig.monday || '',
+        tuesday: cleanConfig.tuesday || '',
+        wednesday: cleanConfig.wednesday || '',
+        thursday: cleanConfig.thursday || '',
+        friday: cleanConfig.friday || '',
+        saturday: cleanConfig.saturday || '',
+        sunday: cleanConfig.sunday || '',
         createdAt: timestamp,
         updatedAt: timestamp
       };
-      
-      const docRef = await addDoc(collection(db, 'weeklyPlans'), newPlan);
-      
+
+      // Convert to JSON and back to remove any undefined values
+      const cleanPlan = JSON.parse(JSON.stringify(newPlan));
+
+      const docRef = await addDoc(collection(db, 'weeklyPlans'), cleanPlan);
+
       return {
         id: docRef.id,
-        ...newPlan
+        ...cleanPlan
       };
     }
   } catch (error) {
@@ -145,57 +156,77 @@ export const createDailyWorkout = async (date: string, routineId: string): Promi
 
     const userId = auth.currentUser.uid;
     const timestamp = Date.now();
-    
+
     // Check if a workout already exists for the given date
     const existingWorkout = await getDailyWorkout(date);
     if (existingWorkout) {
       throw new Error(`A workout already exists for ${date}`);
     }
-    
+
     // Get routine information
     const routineDoc = doc(db, 'routines', routineId);
     const routineSnap = await getDoc(routineDoc);
-    
+
     if (!routineSnap.exists()) {
       throw new Error('Routine not found');
     }
-    
-    const routine = { id: routineSnap.id, ...routineSnap.data() } as WorkoutRoutine;
-    
+
+    const routineData = routineSnap.data();
+
+    if (!routineData) {
+      throw new Error('Routine data is empty');
+    }
+
+    const routine = {
+      id: routineSnap.id,
+      ...routineData
+    } as WorkoutRoutine;
+
+    // Ensure all required fields exist
+    if (!routine.name) {
+      routine.name = 'Rutina sin nombre';
+    }
+
     // Create daily exercises from the routine
-    const dailyExercises: DailyExercise[] = (routine.exercises || []).map(exercise => ({
-      id: `daily-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      routineId: routineId,
-      exerciseId: exercise.id!,
-      name: exercise.name,
-      sets: exercise.sets,
-      reps: exercise.reps,
-      weight: exercise.weight,
-      status: ExerciseStatus.PENDING,
-      notes: ''
-    }));
-    
+    const dailyExercises: DailyExercise[] = (routine.exercises || []).map(exercise => {
+      // Ensure exercise has all required properties to avoid undefined values
+      return {
+        id: `daily-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        routineId: routineId,
+        exerciseId: exercise.id || `ex-${Math.random().toString(36).substr(2, 9)}`,
+        name: exercise.name || 'Ejercicio sin nombre',
+        sets: exercise.sets || 3,
+        reps: exercise.reps || '8-12',
+        weight: exercise.weight || '0',
+        status: ExerciseStatus.PENDING,
+        notes: ''
+      };
+    });
+
     // Calculate day of week
     const dateObj = new Date(date);
     const dayOfWeek = dateObj.getDay(); // 0-6 (0 = Sunday, 1 = Monday, etc.)
-    
+
+    // Create a clean object with no undefined values
     const newDailyWorkout: Omit<DailyWorkout, 'id'> = {
       userId,
       date,
       dayOfWeek,
-      routineId: routineId,
+      routineId,
       routineName: routine.name,
       exercises: dailyExercises,
       completed: false,
       createdAt: timestamp,
       updatedAt: timestamp
     };
-    
-    const docRef = await addDoc(collection(db, 'dailyWorkouts'), newDailyWorkout);
-    
+
+    // Remove any undefined values before saving
+    const cleanWorkout = JSON.parse(JSON.stringify(newDailyWorkout));
+    const docRef = await addDoc(collection(db, 'dailyWorkouts'), cleanWorkout);
+
     return {
       id: docRef.id,
-      ...newDailyWorkout
+      ...cleanWorkout
     };
   } catch (error) {
     console.error('Error creating daily workout:', error);
@@ -214,17 +245,17 @@ export const getDailyWorkout = async (date: string): Promise<DailyWorkout | null
 
     const userId = auth.currentUser.uid;
     const workoutsRef = collection(db, 'dailyWorkouts');
-    const q = query(workoutsRef, 
+    const q = query(workoutsRef,
       where('userId', '==', userId),
       where('date', '==', date)
     );
-    
+
     const querySnapshot = await getDocs(q);
-    
+
     if (querySnapshot.empty) {
       return null;
     }
-    
+
     // Debería haber solo un workout por día
     const workoutDoc = querySnapshot.docs[0];
     return { id: workoutDoc.id, ...workoutDoc.data() } as DailyWorkout;
@@ -238,7 +269,7 @@ export const getDailyWorkout = async (date: string): Promise<DailyWorkout | null
  * Updates the status of an exercise in the daily workout
  */
 export const updateExerciseStatus = async (
-  workoutId: string, 
+  workoutId: string,
   exerciseId: string,
   status: ExerciseStatus,
   notes?: string
@@ -250,13 +281,13 @@ export const updateExerciseStatus = async (
 
     const workoutRef = doc(db, 'dailyWorkouts', workoutId);
     const workoutSnap = await getDoc(workoutRef);
-    
+
     if (!workoutSnap.exists()) {
       throw new Error('Workout not found');
     }
-    
+
     const workout = { id: workoutSnap.id, ...workoutSnap.data() } as DailyWorkout;
-    
+
     // Encontrar y actualizar el ejercicio
     const updatedExercises = workout.exercises.map(ex => {
       if (ex.id === exerciseId) {
@@ -269,19 +300,19 @@ export const updateExerciseStatus = async (
       }
       return ex;
     });
-    
+
     // Verificar si todos los ejercicios están completados o saltados
-    const allCompleted = updatedExercises.every(ex => 
+    const allCompleted = updatedExercises.every(ex =>
       ex.status === ExerciseStatus.COMPLETED || ex.status === ExerciseStatus.SKIPPED
     );
-    
+
     // Actualizar el documento
     await updateDoc(workoutRef, {
       exercises: updatedExercises,
       completed: allCompleted,
       updatedAt: Date.now()
     });
-    
+
     return {
       ...workout,
       exercises: updatedExercises,
@@ -305,23 +336,22 @@ export const getDailyWorkoutsByDateRange = async (startDate: string, endDate: st
 
     const userId = auth.currentUser.uid;
     const workoutsRef = collection(db, 'dailyWorkouts');
-    const q = query(workoutsRef, 
+    const q = query(workoutsRef,
       where('userId', '==', userId),
       where('date', '>=', startDate),
       where('date', '<=', endDate)
     );
-    
+
     const querySnapshot = await getDocs(q);
-    
+
     const workouts: DailyWorkout[] = [];
     querySnapshot.forEach((doc) => {
-      workouts.push({ 
-        id: doc.id, 
-        ...doc.data() 
+      workouts.push({
+        id: doc.id,
+        ...doc.data()
       } as DailyWorkout);
     });
-    
-    // Ordenar por fecha
+
     return workouts.sort((a, b) => {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
@@ -337,9 +367,11 @@ export const getDailyWorkoutsByDateRange = async (startDate: string, endDate: st
 export const getRoutineForDay = async (dayOfWeek: number): Promise<string | null> => {
   try {
     const weeklyPlan = await getWeeklyPlanConfig();
-    
-    if (!weeklyPlan) return null;
-    
+
+    if (!weeklyPlan) {
+      return null;
+    }
+
     // Map day of week to corresponding property
     const dayMapping: Record<number, keyof Omit<WeeklyPlanConfig, 'id' | 'userId' | 'createdAt' | 'updatedAt'>> = {
       0: 'sunday',
@@ -350,9 +382,24 @@ export const getRoutineForDay = async (dayOfWeek: number): Promise<string | null
       5: 'friday',
       6: 'saturday'
     };
-    
-    const routineId = weeklyPlan[dayMapping[dayOfWeek]];
-    return routineId || null;
+
+    const dayProperty = dayMapping[dayOfWeek];
+    if (!dayProperty) {
+      return null;
+    }
+
+    // Get the routine ID for the day and ensure it's a string
+    const routineId = weeklyPlan[dayProperty];
+
+    if (!routineId) {
+      return null;
+    }
+
+    if (typeof routineId !== 'string') {
+      return null;
+    }
+
+    return routineId;
   } catch (error) {
     console.error('Error getting routine for day:', error);
     return null;
@@ -367,24 +414,36 @@ export const generateTodaysWorkout = async (): Promise<DailyWorkout | null> => {
     // Get current date in YYYY-MM-DD format
     const today = new Date();
     const dateString = today.toISOString().split('T')[0];
-    
+
     // Check if a workout already exists for today
     const existingWorkout = await getDailyWorkout(dateString);
     if (existingWorkout) {
       return existingWorkout;
     }
-    
+
     // Get recommended routine for today
     const dayOfWeek = today.getDay();
+
     const routineId = await getRoutineForDay(dayOfWeek);
-    
+
     if (!routineId) {
-      // No routine configured for today
       return null;
     }
-    
+
+    // Verify the routine exists before creating the workout
+    const routineDoc = doc(db, 'routines', routineId);
+    const routineSnap = await getDoc(routineDoc);
+
+    if (!routineSnap.exists()) {
+      return null;
+    }
+
     // Create workout for today
-    return await createDailyWorkout(dateString, routineId);
+    try {
+      return await createDailyWorkout(dateString, routineId);
+    } catch (err) {
+      return null;
+    }
   } catch (error) {
     console.error('Error generating today\'s workout:', error);
     return null;
@@ -395,66 +454,106 @@ export const generateTodaysWorkout = async (): Promise<DailyWorkout | null> => {
  * Initializes the weekly plan configuration with Push-Pull-Legs pattern
  */
 export const initializeWeeklyPlanWithPPL = async (
-  pushRoutineId?: string, 
-  pullRoutineId?: string, 
+  pushRoutineId?: string,
+  pullRoutineId?: string,
   legRoutineId?: string
 ): Promise<WeeklyPlanConfig> => {
   try {
     if (!auth.currentUser) {
       throw new Error('User not authenticated');
     }
-    
+
     // If no specific IDs are provided, search for routines with those names
     let pushId = pushRoutineId;
     let pullId = pullRoutineId;
     let legId = legRoutineId;
-    
+
     if (!pushId || !pullId || !legId) {
       // Search for routines by name
       const userId = auth.currentUser.uid;
       const routinesRef = collection(db, 'routines');
       const q = query(routinesRef, where('userId', '==', userId));
-      
+
       const querySnapshot = await getDocs(q);
       const routines: WorkoutRoutine[] = [];
-      
+
       querySnapshot.forEach((doc) => {
-        routines.push({ 
-          id: doc.id, 
-          ...doc.data() 
+        const data = doc.data();
+        routines.push({
+          id: doc.id,
+          ...data
         } as WorkoutRoutine);
       });
-      
+
       // Assign IDs based on routine names
       if (!pushId) {
-        const pushRoutine = routines.find(r => r.name.toLowerCase().includes('push'));
+        const pushRoutine = routines.find(r => r.name && r.name.toLowerCase().includes('push'));
         pushId = pushRoutine?.id;
       }
-      
+
       if (!pullId) {
-        const pullRoutine = routines.find(r => r.name.toLowerCase().includes('pull'));
+        const pullRoutine = routines.find(r => r.name && r.name.toLowerCase().includes('pull'));
         pullId = pullRoutine?.id;
       }
-      
+
       if (!legId) {
-        const legRoutine = routines.find(r => r.name.toLowerCase().includes('leg'));
+        const legRoutine = routines.find(r => r.name && r.name.toLowerCase().includes('leg'));
         legId = legRoutine?.id;
       }
+
+      // If still no routines found, create default ones
+      const { initializeDefaultRoutines } = await import('./routineService');
+      let defaultRoutinesCreated = false;
+
+      if (!pushId || !pullId || !legId) {
+        await initializeDefaultRoutines();
+        defaultRoutinesCreated = true;
+      }
+
+      // If we created default routines, search again
+      if (defaultRoutinesCreated) {
+        const newQuerySnapshot = await getDocs(q);
+        const newRoutines: WorkoutRoutine[] = [];
+
+        newQuerySnapshot.forEach((doc) => {
+          const data = doc.data();
+          newRoutines.push({
+            id: doc.id,
+            ...data
+          } as WorkoutRoutine);
+        });
+
+        // Look for push, pull, leg routines again
+        if (!pushId) {
+          const pushRoutine = newRoutines.find(r => r.name && r.name.toLowerCase().includes('push'));
+          pushId = pushRoutine?.id;
+        }
+
+        if (!pullId) {
+          const pullRoutine = newRoutines.find(r => r.name && r.name.toLowerCase().includes('pull'));
+          pullId = pullRoutine?.id;
+        }
+
+        if (!legId) {
+          const legRoutine = newRoutines.find(r => r.name && r.name.toLowerCase().includes('leg'));
+          legId = legRoutine?.id;
+        }
+      }
     }
-    
-    // Weekly plan configuration
+
+    // Weekly plan configuration - use empty strings instead of undefined
     const planConfig: Partial<WeeklyPlanConfig> = {
-      monday: pushId,
-      tuesday: pullId,
-      wednesday: legId,
-      thursday: pushId,
-      friday: pullId,
-      saturday: legId,
-      // Sunday is rest day (undefined)
+      monday: pushId || '',
+      tuesday: pullId || '',
+      wednesday: legId || '',
+      thursday: pushId || '',
+      friday: pullId || '',
+      saturday: legId || '',
+      sunday: '' // Rest day
     };
-    
-    // Guardar la configuración
-    return await saveWeeklyPlanConfig(planConfig);
+
+    const cleanConfig = JSON.parse(JSON.stringify(planConfig));
+    return await saveWeeklyPlanConfig(cleanConfig);
   } catch (error) {
     console.error('Error initializing weekly plan with PPL:', error);
     throw error;
