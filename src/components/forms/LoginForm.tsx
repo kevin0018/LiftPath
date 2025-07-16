@@ -9,7 +9,7 @@ import { Link } from 'expo-router';
 interface LoginFormProps {
   onLoginSuccess: () => void;
   onRegisterRedirect?: () => void;
-  navigateRegister?: boolean; // Nueva prop para indicar si debemos navegar a registro
+  navigateRegister?: boolean;
 }
 
 const LoginForm = ({ onLoginSuccess, onRegisterRedirect }: LoginFormProps) => {

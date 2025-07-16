@@ -57,6 +57,8 @@ export default function RootLayout() {
           <Stack.Screen name="register" />
           <Stack.Screen name="home" />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="daily-progress" />
+          <Stack.Screen name="weekly-plan" />
         </Stack>
       </AuthProtection>
     </AuthProvider>
