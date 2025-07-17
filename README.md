@@ -119,6 +119,16 @@ Este proyecto está disponible como software de código abierto bajo la licencia
 
 Para más información sobre la licencia GPL-3.0, consulta [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html).
 
+## Descargar la aplicación
+
+Puedes descargar la última versión de LiftPath directamente desde GitHub:
+
+1. Ve a la sección de [Releases](https://github.com/kevin0018/LiftPath/releases) del repositorio
+2. Descarga el archivo APK de la última versión
+3. Instala el APK en tu dispositivo Android (recuerda permitir la instalación de fuentes desconocidas)
+
+También puedes clonar el repositorio y compilar la aplicación.
+
 ## Autor
 
 Desarrollado por [kevin0018](https://github.com/kevin0018)
